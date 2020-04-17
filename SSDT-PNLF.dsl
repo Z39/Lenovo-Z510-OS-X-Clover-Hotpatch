@@ -1,6 +1,10 @@
-
-// Adding PNLF device for IntelBacklight.kext or AppleBacklight.kext+AppleBacklightFixup.kext
-// Disable Nvidia graphics
+// Adding PNLF device for WhateverGreen.kext and others.
+// This is a modified PNLF version originally taken from RehabMan/OS-X-Clover-Laptop-Config repository:
+// https://raw.githubusercontent.com/RehabMan/OS-X-Clover-Laptop-Config/master/hotpatch/SSDT-PNLF.dsl
+// Rename GFX0 to anything else if your IGPU name is different.
+//
+// Licensed under GNU General Public License v2.0
+// https://github.com/RehabMan/OS-X-Clover-Laptop-Config/blob/master/License.md
 
 #define FBTYPE_SANDYIVY 1
 #define FBTYPE_HSWPLUS 2
@@ -13,41 +17,34 @@
 #define CUSTOM_PWMMAX_1499 0x1499
 #define COFFEELAKE_PWMMAX 0xffff
 
-#ifndef NO_DEFINITIONBLOCK
-DefinitionBlock("", "SSDT", 2, "z510", "_PNLF", 0)
+DefinitionBlock("", "SSDT", 2, "ACDT", "PNLF", 0)
 {
-#endif
     External(RMCF.BKLT, IntObj)
     External(RMCF.LMAX, IntObj)
     External(RMCF.LEVW, IntObj)
     External(RMCF.GRAN, IntObj)
     External(RMCF.FBTP, IntObj)
 
-    External(_SB.PCI0.IGPU, DeviceObj)
-    External(_SB.PCI0.PEG0.PEGP._OFF, MethodObj)
-    External(_SB.PCI0.PEG1.PEGP._OFF, MethodObj)
-    External (_SB_.PCI0.PEG0.PEGP._PS3, MethodObj)    // 0 Arguments (from opcode)
-    
-
-    Scope(_SB.PCI0.IGPU)
+    External(_SB.PCI0.GFX0, DeviceObj)
+    Scope(_SB.PCI0.GFX0)
     {
         OperationRegion(RMP3, PCI_Config, 0, 0x14)
     }
 
     // For backlight control
-    Device(_SB.PCI0.IGPU.PNLF)
+    Device(_SB.PCI0.GFX0.PNLF)
     {
         Name(_ADR, Zero)
-        Name(_HID, EisaId ("APP0002"))
+        Name(_HID, EisaId("APP0002"))
         Name(_CID, "backlight")
-        // _UID is set depending on PWMMax to match profiles in AppleBacklightFixup.kext Info.plist
+        // _UID is set depending on PWMMax to match profiles in WhateverGreen.kext Info.plist
         // 14: Sandy/Ivy 0x710
         // 15: Haswell/Broadwell 0xad9
         // 16: Skylake/KabyLake 0x56c (and some Haswell, example 0xa2e0008)
         // 17: custom LMAX=0x7a1
         // 18: custom LMAX=0x1499
         // 19: CoffeeLake 0xffff
-        // 99: Other (requires custom AppleBacklightInjector.kext/AppleBackightFixup.kext)
+        // 99: Other (requires custom AppleBacklightInjector.kext/WhateverGreen.kext)
         Name(_UID, 0)
         Name(_STA, 0x0B)
 
@@ -154,7 +151,7 @@ DefinitionBlock("", "SSDT", 2, "z510", "_PNLF", 0)
                 // change/scale only if different than current...
                 Local1 = ^LEVX >> 16
                 If (!Local1) { Local1 = Local2 }
-                If (Local2 != Local1)
+                If (!(8 & Local4) && Local2 != Local1)
                 {
                     // set new backlight PWMMax but retain current backlight level by scaling
                     Local0 = (^LEVL * Local2) / Local1
@@ -187,7 +184,7 @@ DefinitionBlock("", "SSDT", 2, "z510", "_PNLF", 0)
                 // change/scale only if different than current...
                 Local1 = ^LEVX
                 If (!Local1) { Local1 = Local2 }
-                If (Local2 != Local1)
+                If (!(8 & Local4) && Local2 != Local1)
                 {
                     // set new backlight PWMMax but retain current backlight level by scaling
                     Local0 = (^LEVD * Local2) / Local1
@@ -235,7 +232,7 @@ DefinitionBlock("", "SSDT", 2, "z510", "_PNLF", 0)
                 // change/scale only if different than current...
                 Local1 = ^LEVX >> 16
                 If (!Local1) { Local1 = Local2 }
-                If (Local2 != Local1)
+                If (!(8 & Local4) && Local2 != Local1)
                 {
                     // set new backlight PWMAX but retain current backlight level by scaling
                     Local0 = (((^LEVX & 0xFFFF) * Local2) / Local1) | (Local2 << 16)
@@ -254,16 +251,6 @@ DefinitionBlock("", "SSDT", 2, "z510", "_PNLF", 0)
             ElseIf (Local2 == CUSTOM_PWMMAX_1499) { _UID = 18 }
             ElseIf (Local2 == COFFEELAKE_PWMMAX) { _UID = 19 }
             Else { _UID = 99 }
-            
-            // disable discrete graphics (Nvidia/Radeon) if it is present
-            If (CondRefOf(\_SB.PCI0.PEG0.PEGP._OFF)) { \_SB.PCI0.PEG0.PEGP._OFF() }
-            If (CondRefOf(\_SB.PCI0.PEG1.PEGP._OFF)) { \_SB.PCI0.PEG1.PEGP._OFF() }
-            If (CondRefOf(\_SB.PCI0.PEG0.PEGP._PS3)) { \_SB.PCI0.PEG0.PEGP._PS3() }
         }
     }
-#ifndef NO_DEFINITIONBLOCK
 }
-#endif
-
-// EOF
-

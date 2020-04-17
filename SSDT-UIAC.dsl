@@ -11,7 +11,7 @@ DefinitionBlock ("", "SSDT", 2, "z510", "UIAC-ALL", 0)
         {
             "8086_8c31", Package()
             {
-                //"port-count", Buffer() { 21, 0, 0, 0 },
+                "port-count", Buffer() { 15, 0, 0, 0 },
                 "ports", Package()
                 {
                     "HS01", Package()    // Camera
@@ -40,25 +40,22 @@ DefinitionBlock ("", "SSDT", 2, "z510", "UIAC-ALL", 0)
                     "HS10", Package()    // USB 2.0 near right
                     {
                         "UsbConnector", 0,
-                        "port", Buffer() { 0x10, 0, 0, 0 },
+                        "port", Buffer() { 0x0A, 0, 0, 0 },
                     },
 
-                    "SSP2", Package()    // USB 3.0 near left
+                    "SSP1", Package()    // USB 3.0 near left
+                    {
+                        "UsbConnector", 3,
+                        "port", Buffer() { 0x10, 0, 0, 0 },
+                    },
+                    "SSP2", Package()    // USB 3.0 far left
                     {
                         "UsbConnector", 3,
                         "port", Buffer() { 0x11, 0, 0, 0 },
                     },
-                    "SSP3", Package()    // USB 3.0 far left
-                    {
-                        "UsbConnector", 3,
-                        "port", Buffer() { 0x12, 0, 0, 0 },
-                    },
-                    "SSP4", Package()    // Card Reader
-                    {
-                        "UsbConnector", 255,
-                        "port", Buffer() { 0x13, 0, 0, 0 },
-
-                    }
+                    
+ 
+                    
                 }
             }
         })
